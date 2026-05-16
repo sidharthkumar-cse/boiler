@@ -1,0 +1,175 @@
+🧮 Extended Kalman Filter (EKF) initialized — sensor-model fusion active
+🔌 Opening up physical connection to /dev/tty.usbserial-0001...
+🤖 Predictive Autopilot Thread Started
+🌐 Python Serial-to-HTTP Proxy running on http://127.0.0.1:8080/data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=1
+DEBUG: Received prediction request
+DEBUG: Prediction requested but Serial not connected
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+📥 Incoming GET request: /data
+📥 Incoming GET request: /predict?minutes=10&target_pressure=0&r_fouling=0
+DEBUG: Received prediction request
+DEBUG: R_FOULING set to 0.0
+DEBUG: Demand → 10 min, target P = 0.0 bar
+DEBUG: Served idle baseline (Heater OFF)
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+📥 Incoming GET request: /data
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?
+✅ Serial connected! Listening for incoming telemetry...
+⚠️ Serial Disconnected! Hardware unplugged?

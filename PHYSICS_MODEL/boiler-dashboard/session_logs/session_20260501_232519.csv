@@ -1,0 +1,1 @@
+timestamp,T_actual,P_actual_gauge,T_predicted,P_predicted,Q_watts,flow_lpm,water_L,eta_instant,health_score,anomaly_flag,prediction_horizon_s,prediction_target_timestamp,L_predicted
