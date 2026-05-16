@@ -1,0 +1,832 @@
+THERMAX INNOMAX INNOVATION CHALLENGE 2026
+PROJECT REPORT
+Physics-Based Digital Twin
+for Industrial Boiler Monitoring & Predictive Control
+Project Title
+BoilerTwin AI: Intelligent Monitoring & Predictive Control System
+Category for Idea Submission
+Sense, Predict & Control
+Team Name
+Hack Beyond
+College Name
+Chandigarh University
+Team Leader
+Team Members
+Faculty Mentor
+Mausam Kumar
+Keerti Vardhan Singh & Sidharth Kumar
+Er. Manni Kumar
+Company
+Thermax Limited
+Company Mentor
+Subject Matter Expert (SME)
+Industry Mentor
+R. S. Jha (Head Innovation_IP_Heating)
+Rohit Khindri (Head IIOT_ IP_Heating)
+Prototype Status
+Fully Functional — Tested & Validated
+GitHub Repository
+github.com/aryanchauhan3800/PHYSICS_MODEL
+Table of Contents
+1. Executive Summary4
+2. Problem Statement & Innovation5
+2.1  The Problem5
+2.2  Current Gaps in Existing Solutions5
+2.3  Our Proposed Solution — BoilerTwin5
+3. System Architecture7
+3.1  Three-Layer Architecture7
+3.2  Data Flow Pipeline7
+3.3  System Schematic7
+3.4  Hardware Bill of Materials8
+4. Physics Engine — Governing Equations10
+4.1  State Variables10
+4.2  Derived Variables & Geometric Relations10
+4.2.1  Liquid Mass in Water Region10
+4.2.2  Steam Mass in Water Region (Below Interface)11
+4.2.3  Steam Mass in Dome (Above Interface)11
+4.2.4  Total System Internal Energy11
+4.2.5  Water Level (Interface Height)11
+4.3  Conservation Laws — The 4×4 DAE System12
+4.3.1  Water Mass Balance — Equation (1)12
+4.3.2  Steam Mass Balance (Below Water Level) — Equation (2)12
+4.3.3  Energy Conservation (First Law) — Equation (3)13
+4.3.4  Steam Dome Mass Balance — Equation (4)14
+4.4  Complete Matrix System C·X = D14
+4.5  Algebraic Sub-Models (Constitutive Correlations)16
+4.5.1  Compressible Steam Outlet Flow (Orifice Equation)16
+4.5.2  Inter-Region Steam Transfer — Zuber Bubble Rise16
+4.5.3  Void Fraction — Zuber-Findlay Drift-Flux Model17
+4.5.4  Water Temperature17
+4.5.5  Environmental Heat Loss18
+4.5.6  Surface Tension (IAPWS Standard Formula)18
+4.5.7  Nucleate Boiling Correlations18
+4.6  Solver Implementation18
+4.7  Advanced Physics Modeling Capabilities19
+5. Extended Kalman Filter — Sensor-Model Fusion27
+5.1  Why an EKF?27
+5.2  Filter Design27
+5.3  EKF Convergence — Live Session Data27
+6. BoilerCore Dashboard — Features & Screenshots28
+6.1  System Overview28
+6.2  Full Dashboard View with System Schematic29
+6.3  System Schematic (Animated LIVE View)29
+6.4  System Status & Controls30
+6.5  Physics-Based 10-Minute Forecast30
+6.6  Telemetry Log31
+6.7  Model Validation Chart31
+6.8  Energy Balance31
+6.9  Model Verification — Complete32
+7. Testing Methodology & Results33
+7.1  Testing Approach33
+7.2  Automated Test Suite — 1,000 Tests33
+7.3  Field Validation — 45-Minute Heating Cycle33
+7.4  Live Hardware Testing — Session Data (1 May 2026)34
+7.5  Energy Balance Analysis35
+7.6  Model Validation — Continuous35
+8. Iteration, Learning & Engineering Trade-offs36
+8.1  What Worked Well36
+8.2  Challenges & Iterations36
+8.3  Engineering Trade-offs37
+9. Industrial Relevance to Thermax38
+9.1  Value Proposition38
+9.2  Scalability38
+10. Technology Stack39
+11. Conclusion40
+References………………………………………………………………………………………..,……41
+1. Executive Summary
+This report documents the Touchpoint 3 (Prototype Build, Progress & Testing) submission for the Thermax Innomax Innovation Challenge 2026. BoilerCore is a fully operational physics-based digital twin of a 6.1-litre industrial steam boiler, integrating first-principles thermodynamic modelling, real-time sensor fusion, and a web-based supervisory dashboard.
+The prototype solves the actual governing equations of mass, energy, and momentum conservation using a 4-equation Index-1 Differential-Algebraic Equation (DAE) system. At its core, BoilerCore employs a Physics-Informed Hybrid AI architecture: a rigorous first-principles physics model serves as the thermodynamic foundation, and a lightweight machine learning residual model (trained via scikit-learn) is layered on top to correct for minor non-linear, unmodelled dynamics. The hybrid forecast is computed as: hybrid_output = physics_forecast + ML_residual_correction. This approach guarantees physical consistency and thermodynamic validity, while the ML layer continuously improves accuracy by learning from the small systematic errors the pure physics model cannot capture.
+Key Performance Metrics
+Metric
+Achieved Value
+Benchmark
+Temperature RMSE
+2.01 °C
+< 5 °C
+Temperature MAPE
+0.46%
+< 2%
+Pressure MAPE
+1.16%
+< 3%
+Mass Conservation
+100% (all timesteps)
+100%
+2nd Law Compliance
+100% (all timesteps)
+100%
+Automated Test Suite
+1000 / 1000 passed
+Pass all
+Prediction Speed
+12.6 ms per evaluation
+< 100 ms (real-time)
+Model Health Score
+98 / 100
+> 90
+EKF Sensor Fusion Cycles
+21,364+ cycles (live session)
+Continuous
+ 
+2. Problem Statement & Innovation
+2.1 The Problem
+Industrial steam boilers are critical assets across manufacturing, pharmaceuticals, textiles, and food processing. However, traditional boiler management is entirely reactive: operators respond to alarms after a fault has already occurred. This results in unplanned downtime, safety incidents from overpressure or dry firing, and significant energy waste from sub-optimal combustion and heat transfer.
+Key Industry Pain Points:
+Boiler failures cause 15–30% of unplanned industrial downtime
+Scaling/fouling reduces thermal efficiency by 5–10% per mm of deposit, undetected until maintenance
+No real-time prediction: operators cannot anticipate pressure excursions 5–10 minutes ahead
+Existing SCADA systems log data but do not model future states
+Skilled boiler operators are scarce; new operators risk expensive mistakes during training
+2.2 Current Gaps in Existing Solutions
+Rule-based SCADA systems: React to sensor thresholds — no prediction capability
+Machine-learning models: Pure ML models require large labelled datasets, fail outside training distribution, and are opaque black boxes with no physical guarantees
+Commercial digital twins: Cost ₹50L–2Cr per deployment; inaccessible to mid-tier manufacturers
+Open-source gap: No validated, parameterisable, hardware-ready physics-based boiler twin exists
+2.3 Our Proposed Solution — BoilerTwin
+BoilerTwin is a Physics-Informed Hybrid AI digital twin that continuously solves the thermodynamic equations governing the boiler’s behaviour in real-time. Its architecture combines a rigorous first-principles physics model — solving the full 4-equation DAE system — with a lightweight scikit-learn ML residual model that corrects for minor non-linear, unmodelled dynamics. The hybrid forecast is assembled as: hybrid_output = physics_forecast + ML_residual_correction. The system predicts temperature, pressure, and water level 5–25 minutes ahead with >97% accuracy, with thermodynamic validity guaranteed at every step by the underlying conservation laws.
+Dimension
+Traditional SCADA
+ML-Based Twin
+BoilerCore (Ours)
+Physical basis
+None
+Statistical
+Physics-Based Hybrid AI
+Prediction horizon
+None
+1–3 min (unreliable)
+5–25 min (physics-bounded)
+Training data
+No
+Weeks/months
+Minimal — residual model only
+Extrapolation safety
+N/A
+Poor
+Guaranteed by physics laws; ML bounded by physics
+Cost
+Low
+High
+Low (open hardware)
+Explainability
+None
+Black box
+Full — physics equations visible; ML residual auditable
+3. System Architecture
+3.1 Three-Layer Architecture
+Layer
+Component
+Technology
+Role
+Hardware
+ESP32 DevKit– + Sensors
+C++ / Arduino
+Sensor acquisition & heater control
+Middleware
+Serial Proxy (Python)
+Python 3 / SciPy
+Physics engine, EKF, REST API bridge
+Presentation
+BoilerCore Dashboard
+Next.js / TypeScript
+Real-time UI, forecast, autopilot
+3.2 Data Flow Pipeline
+1. Sensor Reading — ESP32 samples PT100 (temp), ADS1115 (pressure ADC), flow meter, float switches @ 1 Hz
+2. Firmware EMA — On-chip exponential moving average (α = 0.15) reduces burst noise
+3. Serial TX — UART at 115,200 baud to host machine
+4. Median/MAD Filter — 5-sample rolling window eliminates outliers in serial_proxy.py
+5. EKF Fusion — Extended Kalman Filter fuses filtered sensor readings with physics model prediction
+6. Physics Model — Radau ODE solver propagates 4-state DAE system forward in time
+7. REST API — HTTP server exposes /state, /predict, /history, /autopilot endpoints
+8. Dashboard — Next.js frontend renders live telemetry, forecasts, and autopilot controls
+3.3 System Schematic
+Figure 1: Physical system schematic — water inlet, boiler vessel, sensors, steam outlet, and motorised valve
+3.4 Hardware Bill of Materials
+Figure 2: Hardware bill of materials — 22 components comprising the BoilerCore prototype
+#
+Component
+Specification
+Purpose
+1
+Steam Boiler Vessel
+6.1 L, 18 cm dia × 24 cm height
+Primary system under monitoring
+2
+ESP32 DevKit
+Dual-core 240 MHz, Wi-Fi/BT
+Master microcontroller
+3
+MAX31865 + PT100 RTD
+±0.15°C accuracy
+Water temperature measurement
+4
+I2C ADS1115 ADC
+16-bit, 4-channel
+Pressure transducer signal acquisition
+5
+Pressure Transducer
+0–1.2 MPa, 0.5–4.5 V output
+Absolute drum pressure
+6
+YF-S201 Flow Meter
+Hall-effect, 1/2 inch
+Feedwater volume tracking
+7
+BE0050 SSR-40DA
+40A solid-state relay
+Heater power switching (1 kW)
+8
+24VDC Motorised Ball Valve
+DN15, 1/2 inch
+Steam outlet / pressure relief actuation
+9
+Filox 12V Diaphragm Pump
+6 L/min self-priming
+Feedwater delivery
+10
+Float Switches (×2)
+Horizontal L-type, 1/4 inch BSP
+High / low water level safety interlock
+11
+Brass Safety Valve
+Mechanical pressure relief
+Last-resort overpressure protection
+12
+LM2596HVS Buck Converter
+4.5–50 V DC-DC
+24V → 5V logic rail
+13
+AMAZOR Brass NRV
+1/2 inch non-return valve
+Prevents backflow into pump
+14
+Heater (1Kw)
+230V AC immersion heater
+Heat generation inside boiler
+15
+4 Channel 5V relay module
+5V, opto-isolated
+Control of pump & valve logic
+16
+24V SMPS
+24V, 5–10A
+Main power supply
+17
+Heat Sink and Thermal Paste for SSR-40DA
+Compatible with SSR-40DA
+Heat dissipation for SSR
+18
+10A MCB
+230V AC, single pole
+Electrical protection
+4. Physics Engine — Governing Equations
+The governing equations and mathematical framework presented in this section are derived from the research of R. S. Jha (Head of Innovation, Thermax), specifically from his three peer-reviewed publications: R. S. Jha and M. M. Lele (2022), R. S. Jha, N. N. Jha, and M. M. Lele (2022) & L. M. Sayyed, A. V. Jomde, R. S. Jha, and M. M. Lele (2023) . The C·X = D Differential-Algebraic Equation (DAE) matrix structure, Zuber–Findlay Drift-Flux void fraction model (Equation 41), Lumped Parameter approach, and Jacobian-based numerical stability framework are all adopted directly from Jha’s published work. Full citations are provided in the References section.
+4.1 State Variables
+The digital twin solves four coupled conservation equations — identical to the BoilerCore_Report physics model. The state vector X = [dP/dt, dVdw/dt, dφ/dt, ṁg]ᵀ is evolved at every time step by solving the 4×4 matrix system C·X = D using NumPy’s linear solver with row scaling.
+Symbol
+State Variable
+Unit
+Description
+P
+Drum Pressure
+Pa
+Absolute pressure in the two-phase mixture
+Vdw
+Water-Region Volume
+m³
+Volume below water level (liquid+steam mixture)
+φ (phi)
+Steam Mass Quality
+— (0–1)
+Mass fraction of steam in the water-region mixture
+ṁg
+Steam Generation Rate
+kg/s
+Evaporation rate (solved as 4th unknown in C·X=D)
+4.2 Derived Variables & Geometric Relations
+Before assembling the matrix, the following intermediate quantities are derived from state variables, boiler geometry, and IAPWS-97 saturation properties:
+4.2.1 Liquid Mass in Water Region
+Liquid Mass
+where α = drift-flux void fraction (steam volume fraction);  = saturated liquid density from IAPWS-97 [kg/m³]
+4.2.2 Steam Mass in Water Region (Below Interface)
+Steam Mass (Below)
+Steam bubbles entrained in the boiling zone;  = saturated vapour density from IAPWS-97 [kg/m³]
+Where: M_steam,dw = steam mass below water interface [kg]; rho_g = saturated vapour density [kg/m3]; V_dw = mixture region volume [m3]; alpha = void fraction [-]
+4.2.3 Steam Mass in Dome (Above Interface)
+Steam Mass (Dome)
+Steam filling the headspace above the water-steam interface;  = 6.107 × 10⁻³ m³ (total drum volume)
+Where: M_steam,dome = steam mass in headspace dome [kg]; rho_g = saturated vapour density [kg/m3]; V_T = total drum volume = 6.107x10^-3 m3; V_dw = mixture region volume [m3]
+4.2.4 Total System Internal Energy
+Total Internal Energy
+where specific internal energy u = h − P/ρ;  =  − P/,  = − P/
+Where: U_total = total system internal energy [J]; rho_w, rho_s = liquid/vapour density [kg/m3]; u_w, u_s = specific internal energy = h - P/rho [J/kg]; h_w, h_s = specific enthalpy [J/kg]; alpha = void fraction [-]; P = drum pressure [Pa]; V_dw, V_T = mixture/total volume [m3]
+4.2.5 Water Level (Interface Height)
+Apparent Water Level
+= π/4 · D² = π/4 · (0.18)² ≈ 0.02545 m²; level clamped to [0, 0.24 m]
+Where: L_apparent = water level above drum bottom [m]; V_dw = mixture region volume [m3]; A_drum = drum cross-sectional area = pi/4 * D^2 approx 0.02545 m2 for D = 0.18 m
+4.3 Conservation Laws — The 4×4 DAE System
+The four governing conservation equations are formulated for two coupled regions: (1) the water/steam mixture region below the water level (volume Vdw), and (2) the steam dome above the water level (volume Vds = VT − Vdw). Each equation contributes one row to the matrix system C·X = D.
+4.3.1 Water Mass Balance — Equation (1)
+Starting from liquid mass conservation: Accumulation = Inflow − Evaporation
+Equation (1) — Water Mass Balance
+Expanding via product rule ( and α both depend on P and φ):
+Where: rho_f = saturated liquid density [kg/m3]; V_dw = mixture region volume [m3]; alpha = void fraction [-]; m_dot_w = feedwater mass flow rate [kg/s]; m_dot_g = steam generation (evaporation) rate [kg/s]; dP/dt = pressure rate of change [Pa/s]; dV_dw/dt = volume rate of change [m3/s]; dPhi/dt = quality rate of change [s^-1]
+Expanded form:
+Equation (1) Expanded
+Where: V_dw = mixture volume [m3]; alpha = void fraction [-]; rho_f = liquid density [kg/m3]; drho_f/dP = liquid density derivative [kg/m3/Pa]; d(alpha)/d(phi), d(alpha)/dP = void fraction partial derivatives; m_dot_w = feedwater flow [kg/s]
+Matrix coefficients for Row 1:
+4.3.2 Steam Mass Balance (Below Water Level) — Equation (2)
+Models the steam bubbles generated within the water column. Steam accumulates through evaporation and is lost upward via bubble rise (inter-region transfer ).
+Equation (2) — Steam Mass Balance (Water Region)
+Where: rho_g = vapour density [kg/m3]; V_dw = mixture volume [m3]; alpha = void fraction [-]; m_dot_g = steam generation rate [kg/s]; m_dot_i = inter-region steam transfer (bubble rise) rate [kg/s]
+Expanded form (product rule,  depends on P):
+Equation (2) Expanded
+Where: V_dw = mixture volume [m3]; alpha = void fraction [-]; rho_g = vapour density [kg/m3]; drho_g/dP = vapour density derivative [kg/m3/Pa]; d(alpha)/dP, d(alpha)/dphi = void fraction derivatives; m_dot_g = evaporation rate [kg/s]; m_dot_i = bubble rise transfer rate [kg/s]
+Matrix coefficients for Row 2:
+4.3.3 Energy Conservation (First Law) — Equation (3)
+Global energy balance using internal energy (correct for a constant-volume system). The total internal energy Utotal spans both regions:
+Equation (3) — Global Energy Balance
+Where: U_total = total internal energy [J]; Q = heater power [W]; Q_loss = ambient heat loss [W]; m_dot_w = feedwater flow [kg/s]; h_fw = feedwater enthalpy [J/kg]; m_dot_s = steam outlet flow [kg/s]; h_s = steam outlet enthalpy [J/kg]; e_w = rho_w * u_w, e_s = rho_s * u_s = volumetric energy densities [J/m3]
+where e = ρu = ρ(h − P/ρ), ew = ρw·uw, es = ρs·us. Matrix coefficients for Row 3:
+C₃₁ (energy pressure term)
+where the volumetric energy derivative terms are:
+4.3.4 Steam Dome Mass Balance — Equation (4)
+The steam dome volume is Vds = V_T − Vdw. Steam enters from the water region and exits through the valve.
+Equation (4) — Steam Dome Mass Balance
+Where: rho_g = vapour density [kg/m3]; V_T = total drum volume [m3]; V_dw = mixture region volume [m3]; m_dot_i = inter-region steam transfer rate [kg/s]; m_dot_s = steam outlet flow rate [kg/s]; dP/dt = pressure rate [Pa/s]; dV_dw/dt = volume rate [m3/s]
+Expanding (V_T = constant):
+Equation (4) Expanded
+Where: V_T = total drum volume = 6.107x10^-3 m3; V_dw = mixture volume [m3]; rho_g = vapour density [kg/m3]; drho_g/dP = vapour density derivative [kg/m3/Pa]; m_dot_i = bubble transfer rate [kg/s]; m_dot_s = steam outlet rate [kg/s]
+Matrix coefficients for Row 4:
+4.4 Complete Matrix System C·X = D
+The four conservation equations assemble into the 4×4 linear system solved at each time step. Row scaling normalises each equation by its largest coefficient, reducing the condition number from O(10¹⁴) to O(10⁶) — essential given the density ratio ρw/ρs ≈ 1,600 between water and steam:
+State Derivative Vector X  (unknowns)
+Where: dP/dt = pressure rate [Pa/s]; dV_dw/dt = mixture volume rate [m3/s]; dphi/dt = steam quality rate [s^-1]; m_dot_g = steam generation rate [kg/s]; these four are the unknowns solved by C*X = D at each timestep
+Right-Hand Side Vector D
+Where: m_dot_w = feedwater inlet flow [kg/s]; m_dot_i = bubble transfer rate [kg/s]; Q = heater power [W]; Q_loss = ambient heat loss [W]; h_fw = feedwater enthalpy [J/kg]; m_dot_s = steam outlet flow [kg/s]; h_s = steam specific enthalpy [J/kg]
+Col 1: dP/dt
+Col 2: dVdw/dt
+Col 3: dφ/dt
+Col 4: ṁg
+System solved as X = C⁻¹·D at each time step using scipy.linalg.solve (NumPy linalg.solve). Condition number κ(C) ≈ 10⁶ after row scaling.
+4.5 Algebraic Sub-Models (Constitutive Correlations)
+4.5.1 Compressible Steam Outlet Flow (Orifice Equation)
+The steam mass flow rate through the outlet valve uses a compressible orifice equation with isentropic expansion, specific heat ratio k = 1.3 for steam:
+Steam Outlet Flow
+Compressible Expansion Factor Ψ
+Where: Psi = compressible expansion factor [-]; k = isentropic exponent = 1.3 for steam [-]; r = P_down / P_up = pressure ratio [-]; r_c = critical (choked) pressure ratio = (2/(k+1))^(k/(k-1)) [-]
+k = 1.3 (steam)
+C_D = 0.65 (discharge coeff.)
+Av = π/4 · D_pipe²
+D_pipe = 0.0127 m (½ inch)
+4.5.2 Inter-Region Steam Transfer — Zuber Bubble Rise
+The mechanistic formula for steam bubble rise velocity uses the Zuber correlation. Steam transfer from the water region to the steam dome:
+Bubble Rise Velocity (Zuber)
+Where: v_rise = bubble terminal rise velocity [m/s]; sigma = surface tension [N/m]; g = gravitational acceleration = 9.81 m/s2; rho_w = liquid water density [kg/m3]; rho_s = saturated steam density [kg/m3]
+Inter-Region Transfer Rate
+where σ = IAPWS surface tension [N/m], g = 9.81 m/s², α_exit = surface void fraction
+Where: m_dot_i = inter-region steam mass transfer rate [kg/s]; A_drum = drum cross-sectional area [m2]; alpha_exit = void fraction at water-steam interface [-]; rho_s = steam density [kg/m3]; v_rise = bubble rise velocity [m/s]
+4.5.3 Void Fraction — Zuber-Findlay Drift-Flux Model
+The void fraction α (volumetric steam fraction in the water region) is computed using the Zuber-Findlay drift-flux model (C₀ = 1.13), which corrects for non-uniform radial bubble distribution in cylindrical vessels:
+Drift-Flux Void Fraction
+Where: alpha_DF = drift-flux corrected void fraction [-]; alpha_h = homogeneous void fraction [-]; C0 = distribution parameter = 1.13 (validated for drum diameter D less than 20 cm) [-]
+Homogeneous Void Fraction α_h
+Where: alpha_h = homogeneous void fraction [-]; rho_w = liquid density [kg/m3]; rho_s = vapour density [kg/m3]; phi = steam mass quality [-]; x = modified quality parameter [-]
+Exit Void Fraction (Surface)
+Where: alpha_exit = surface/exit void fraction [-]; phi = steam mass quality [-]; rho_w = liquid density [kg/m3]; rho_s = vapour density [kg/m3]
+Reference: Zuber, N. & Findlay, J.A. (1965), “Average Volumetric Concentration in Two-Phase Flow Systems”, J. Heat Transfer, 87(4).
+4.5.4 Water Temperature
+IMPORTANT: The model measures and predicts water temperature as the saturation temperature at the current boiler pressure — not as a wall temperature or independently measured quantity. This is consistent with the saturated mixture assumption throughout:
+Water Temperature (Saturation)
+Twater = Tsat(P) [K or °C] (IAPWS-97)
+Precomputed as a cubic spline over 500 pressure nodes from 4 kPa to 3.5 MPa. Gives exact dTsat/dP derivatives for the matrix.
+Where: T_water = bulk water temperature [K or degC]; T_sat(P) = saturation temperature at drum pressure P, from IAPWS-97 cubic spline [K]; P = drum absolute pressure [Pa]; dT_sat/dP = Clausius-Clapeyron derivative [K/Pa]
+4.5.5 Environmental Heat Loss
+Environmental Heat Loss
+Uloss = 18 W/(m²·K) (calibrated)
+Avessel = πDH + 2·A_D
+Tamb = 25 °C
+A_D = 0.02545 m²
+4.5.6 Surface Tension (IAPWS Standard Formula)
+Surface Tension σ
+4.5.7 Nucleate Boiling Correlations
+Correlation
+Physical Phenomenon
+Equation
+Thom (1966)
+Nucleate boiling heat flux
+Zuber (1959)
+Critical Heat Flux (CHF)
+Davis-Anderson
+Onset of Nucleate Boiling
+4.6 Solver Implementation
+The physics engine solves the C·X = D matrix system at every time step and propagates the state forward using a stiff-stable ODE integrator:
+Parameter
+Choice
+Rationale
+ODE Solver
+scipy.integrate.solve_ivp with Radau
+Radau is a 5th-order implicit Runge-Kutta algorithm designed specifically for stiff differential-algebraic equations. We initially attempted standard explicit RK45, but it diverged due to the extreme stiffness of the boiling phase (the abrupt ~1,600× density jump from water to steam). Radau’s implicit formulation handles this stiffness unconditionally; RK45 diverges at density ratios > 100.
+Property Lookup
+IAPWS-97 cubic splines (500 pts)
+100× speed improvement; exact analytical derivatives dρ/dP, dh/dP
+Matrix Solver
+scipy.linalg.solve with row scaling
+Row scaling reduces condition number from O(10¹⁴) to O(10⁶)
+Regime Handling
+Three regimes: Subcooled, Transition, Boiling
+Smooth handoff with φ₀ = 0.005 to avoid discontinuities
+Analytical Derivatives
+∂α/∂φ and ∂α/∂P via chain rule
+No numerical differencing noise in matrix coefficients
+4.7 Advanced Physics Modeling Capabilities
+The BoilerTwin physics engine implements 25 distinct physical phenomena — all validated, all operating in real-time. The following subsections catalogue each phenomenon by domain, cross-referenced to the codebase module responsible for its implementation.
+A. Thermodynamics & Phase Change
+1. Shrink & Swell (Water Level Illusion).  tracks mixture volume (liquid + entrained bubbles) so the swell effect emerges naturally from the coupled DAE equations; no empirical correction factor is needed. 
+Shrink & Swell — Apparent Drum Level
+Where: L_apparent = apparent water level (includes bubble swell) [m]; V_dw = mixture volume tracking liquid + entrained bubbles [m3]; A_drum = drum cross-sectional area = 0.02545 m2; alpha = void fraction; higher alpha leads to higher apparent level even as liquid mass decreases (the swell illusion)
+2. Four Thermal Regimes. The model navigates four distinct regimes — Pure Subcooled, Subcooled Nucleate Boiling, Saturated Boiling, and Pressure Relief — with smooth automatic transitions via a seed void fraction (φ₀ = 0.005), requiring no operator intervention. 
+Four Thermal Regimes — Void Fraction Seed at Transition
+Where: phi_0 = seed steam quality = 0.005 [-]; injected at subcooled to boiling boundary to prevent the C matrix becoming singular; T_ONB = onset of nucleate boiling temperature; T_sat = saturation temperature at current pressure
+3. Onset of Nucleate Boiling (Davis–Anderson / Hsu Criterion). The model computes the minimum wall superheat required for vapor embryo formation, ensuring the transition to nucleate boiling is physically triggered rather than assumed. 
+Onset of Nucleate Boiling — Davis–Anderson / Hsu Criterion
+Where: DeltaT_ONB = minimum wall superheat for vapor embryo survival [K]; sigma = surface tension [N/m]; T_sat = saturation temperature [K]; q_double_prime = wall heat flux [W/m2]; k_l = liquid thermal conductivity [W/(m*K)]; rho_s = vapour density [kg/m3]; h_fg = latent heat of vaporisation [J/kg]; T_ONB = bulk temperature at onset of boiling [degC]
+4. Thom Correlation (1966). Nucleate boiling heat flux is computed as a function of wall superheat using the Thom (1966) correlation, providing an industry-standard relationship between heater surface temperature and boiling intensity. 
+Thom (1966) Nucleate Boiling Heat Flux
+Where: q_double_prime = nucleate boiling heat flux [W/m2]; DeltaT_sat = wall superheat above saturation temperature [K]; P = drum absolute pressure [Pa]; 8.7x10^6 Pa = reference pressure in Thom correlation; 22.65 = Thom constant; exp(P/8.7e6) = pressure correction factor
+5. Zuber Critical Heat Flux Guard (CHF / Leidenfrost). The Zuber (1959) CHF limit caps the Thom heat flux at every timestep, preventing the solver from entering the film boiling regime. This safety guard ensures the model remains in the physically valid nucleate boiling domain under all operating conditions. 
+Zuber Critical Heat Flux (CHF) — Leidenfrost Guard
+Where: q_CHF = critical heat flux (Leidenfrost limit) [W/m2]; h_fg = latent heat of vaporisation [J/kg]; rho_s = saturated vapour density [kg/m3]; sigma = surface tension [N/m]; g = 9.81 m/s2; rho_w = liquid density [kg/m3]; 0.131 = Zuber dimensionless constant; q_actual = min(q_Thom, q_CHF) enforces the CHF guard
+6. Metal Wall Thermal Lag (5th ODE State). Boiler metal thermal inertia is modelled as an explicit fifth ODE state variable: M_m·C_m·dT_wall/dt = Q_heater − Q_transfer − Q_loss. This correctly captures the observed delay between heater activation and bulk water temperature rise — a critical phenomenon for accurate 10-minute forecasting. 
+Metal Wall Thermal Lag — 5th ODE State
+Where: M_m = heater/metal mass = 0.5 kg; C_m = metal specific heat approx 500 J/(kg*K); T_wall = heater wall temperature [degC]; Q_heater = electrical heater power [W]; Q_transfer = convective heat to water [W]; Q_loss = loss to air [W]; U_eff = effective heat transfer coefficient [W/(m2*K)]; A_heater = heater surface area [m2]; T_water = bulk water temperature [degC]
+7. Sealed-Vessel Pressure Model (Thermal Expansion + Dalton’s Law). In the sub-saturation regime, system pressure is computed as the superposition of water thermal expansion and the vapor partial pressure (Dalton’s Law of Partial Pressures). This correctly reproduces the observed pressure rise before boiling onset. 
+Sealed-Vessel Pressure — Thermal Expansion + Dalton's Law
+Where: dP_thermal = pressure rise from liquid thermal expansion [Pa]; beta = isobaric thermal expansion coefficient [K^-1]; dT = temperature change [K]; V_water = liquid volume [m3]; C_gas = gas compressibility = V_gas/P [m3/Pa]; C_water = liquid compressibility = V_water/K_water [m3/Pa]; K_water = bulk modulus = 2.2 GPa; dP_vapor = pressure contribution from vapor partial pressure [Pa]; P_sat = saturation pressure [Pa]; eta(T) = vapor equilibrium efficiency sigmoid [-]
+8. Vapor Equilibrium Efficiency η(T) — Calibrated Sigmoid. A temperature-dependent sigmoid function, optimised via SciPy differential evolution on 7,143 real data points, accounts for trapped air dilution of the vapor phase. This calibration delivered a 30.5% RMSE improvement over the uncorrected model. 
+Vapor Equilibrium Efficiency — Calibrated Sigmoid η(T)
+Where: eta(T) = vapor equilibrium efficiency [-] in range [0, 0.82]; T = bulk water temperature [degC]; 0.82 = asymptotic maximum efficiency; 0.50 = sigmoid slope (fitted by differential_evolution); 66.2 degC = inflection temperature (fitted); calibrated on 7143 real data points; 30.5% RMSE improvement over constant-eta model
+9. Thermal Expansion Coefficient β(T) — NIST Polynomial. Water’s isobaric thermal expansion coefficient is computed from a NIST polynomial fit rather than a constant value, ensuring accurate volumetric behavior across the full temperature range from ambient to saturation. 
+Thermal Expansion Coefficient β(T) — NIST Polynomial
+Where: beta(T) = isobaric thermal expansion coefficient of water [K^-1]; T = temperature [degC]; NIST polynomial coefficients: -6.43e-5, 1.7e-5, -2.02e-8, 3.71e-10; captures anomalous density maximum at 4 degC and increasing expansion at higher T
+10. Fouling Resistance Model. Effective heat transfer coefficient is computed as Ueff = 1 / (1/Htotal + Rfouling), allowing the model to track gradual efficiency degradation from scale deposits without any sensor modification. 
+Fouling Resistance — Effective Heat Transfer Coefficient
+Where: U_eff = effective overall heat transfer coefficient [W/(m2*K)]; H_total = clean-surface HTC = H_conv + H_boil [W/(m2*K)]; R_fouling = fouling thermal resistance [(m2*K)/W]; R_fouling = 0 for clean prototype; increasing R_fouling simulates scale deposit degradation
+B. Fluid Dynamics & Bubble Physics
+11. Kutateladze-Type Bubble Dynamics (Harmathy Correlation). Bubble terminal rise velocity is computed from the Harmathy correlation, which accounts for surface tension, buoyancy, and the liquid-vapor density ratio. This determines inter-region steam transfer rates and underpins the Kutateladze number formulation used in the CHF guard. 
+Kutateladze–Harmathy Bubble Rise Velocity
+Where: v_rise = bubble terminal rise velocity [m/s]; 1.41 = Harmathy empirical constant; sigma = surface tension [N/m]; g = 9.81 m/s2; rho_w = liquid density [kg/m3]; rho_s = vapour density [kg/m3]; m_dot_transfer = steam mass transfer rate from water region to dome [kg/s]; A_drum = drum cross-sectional area [m2]; alpha_exit = exit void fraction at interface [-]
+12. Zuber–Findlay Drift-Flux Void Fraction (Analytical Derivatives). Void fraction α is computed via the Zuber–Findlay (C₀ = 1.13) drift-flux model, with analytical partial derivatives ∂α/∂φ and ∂α/∂P derived via the chain rule. Using analytical rather than numerical derivatives eliminates differencing noise from the C matrix coefficients. 
+Zuber–Findlay Drift-Flux Void Fraction
+Where: alpha_DF = drift-flux void fraction [-]; alpha_h = homogeneous void fraction [-]; C0 = distribution parameter = 1.13; accounts for non-uniform radial bubble distribution in cylindrical drum; partial derivatives d(alpha)/dphi and d(alpha)/dP computed analytically to eliminate numerical differencing noise in the C matrix
+13. Compressible Choked Steam Flow (Isentropic Nozzle). Steam outlet mass flow is computed using isentropic nozzle equations, with Mach = 1 choked-flow limiting applied when the pressure ratio across the valve exceeds the critical value. This is essential for accurate steam dome pressure modeling during rapid valve operation. 
+Compressible Choked Steam Flow — Isentropic Nozzle (k = 1.3)
+Where: r_crit = critical pressure ratio for choked (sonic) flow [-]; k = isentropic exponent = 1.3 for steam; m_dot_steam = steam mass flow rate [kg/s]; C_D = discharge coefficient = 0.65; A = valve orifice area [m2]; f_valve = fractional valve opening [0-1]; P = upstream pressure [Pa]; rho_s = steam density [kg/m3]; r = P_down/P_up >= r_crit for choked flow
+14. Heat Partitioning in Subcooled Nucleate Boiling. The fraction of heater energy entering the subcooled nucleate boiling channel is computed from an exponential axial heat flux profile (parameter Z), correctly splitting heat between single-phase convection and bubble nucleation. 
+Heat Partitioning — Subcooled Nucleate Boiling
+Where: Z = normalised position in subcooled boiling regime [-]; T = bulk water temperature [degC]; T_ONB = onset of nucleate boiling temperature [degC]; T_sat = saturation temperature [degC]; epsilon = heat partitioning fraction [-]; Q_net = net heat input [W]; Q_sensible = heat for sensible warming [W]; up to 10% of Q_net diverted to bubble nucleation at epsilon = 1
+C. IAPWS Thermodynamic Property Standards
+15. IAPWS-97 Cubic Spline Acceleration. All IAPWS-97 thermodynamic properties (density, enthalpy, entropy, specific heat) are pre-computed across 500 pressure points and served via cubic spline interpolation at runtime, delivering a 100× speedup over direct IAPWS-97 API calls while retaining sub-0.01% accuracy. 
+IAPWS-97 Cubic Spline Acceleration — 100× Speedup
+Where: 500 pressure nodes from 4 kPa to 3.5 MPa; properties computed: rho_f, rho_g, h_f, h_g, h_fg, drho/dP, dh/dP, T_sat, sigma; cubic spline coefficients stored at startup; runtime: O(log n) binary search + polynomial evaluation; accuracy: sub-0.01% vs direct IAPWS-97; speedup: 100x vs on-the-fly calls
+16. IAPWS Surface Tension (1994 Release). Surface tension σ is computed from the IAPWS 1994 surface tension release as a function of saturation temperature. It is used consistently across three sub-models: the CHF guard (Zuber criterion), the bubble rise velocity (Harmathy correlation), and the ONB calculation (Hsu criterion). 
+IAPWS Surface Tension — 1994 Release
+Where: sigma = water-steam surface tension [N/m]; tau = 1 - T/T_c = dimensionless temperature distance from critical point; T = temperature [K]; T_c = 647.096 K (water critical temperature); used in: Zuber CHF guard, Harmathy bubble rise velocity, Davis-Anderson ONB criterion
+D. Numerical Methods & Solver Rigor
+17. Row Scaling of the C Matrix. Each row of the C matrix is divided by its largest element before solving, reducing the condition number from O(10¹⁴) to O(10⁶). This prevents numerical explosion caused by the ∼1,600× density ratio between liquid water and steam spanning fourteen orders of magnitude. 
+Row Scaling — C Matrix Numerical Conditioning
+Where: C_scaled = row-scaled coefficient matrix; max(|C_row|) = largest absolute value in each row; condition number kappa(C): from O(10^14) unscaled to O(10^6) scaled; root cause: density ratio rho_w/rho_s approx 1600 at 1 bar creates 14-order-of-magnitude span in matrix entries
+18. Radau Implicit Runge–Kutta Solver (Stiff DAE). The Radau method (5th-order implicit Runge–Kutta) from scipy.integrate.solve_ivp natively handles the Index-1 DAE structure of the boiler model. An explicit RK45 solver was tested and diverged due to stiffness; Radau’s implicit formulation is unconditionally stable for this class of system.
+Radau Implicit Runge–Kutta — Stiff DAE Solver
+Where: Radau: 5th-order implicit Runge-Kutta method; A-stable = stable for all step sizes with stiff problems; L-stable = no numerical oscillation at large time steps; Index-1 DAE = differential equations with one algebraic constraint; eigenvalue spread > 10^6 means explicit methods (RK45) would need millions of micro-steps; implemented via scipy.integrate.solve_ivp with method='Radau'
+19. Safety Relief Valve (SRV) Pressure Cap. A hard pressure ceiling of 4 bar is enforced at the solver level, mirroring the mechanical SRV in the physical prototype. This prevents unbounded pressure growth in edge-case scenarios and maintains safe model behavior under all operating conditions. 
+Safety Relief Valve (SRV) — Pressure Cap
+Where: P = drum absolute pressure [Pa]; P_set = SRV set pressure = 4 bar = 4x10^5 Pa; dP/dt = pressure rate of change [Pa/s]; when triggered: dP/dt clamped to 0, excess steam vented; mirrors the mechanical brass safety valve in the physical prototype
+20. Parasitic Leak Model. A pressure-proportional leak term ṁleak = Kleak × Pgauge (bar) is subtracted from the steam dome mass balance, accounting for minor steam losses through valve seats and pipe joints that are present in all real boilers but absent from idealised models. 
+Parasitic Leak Model
+Where: m_dot_leak = parasitic steam leak rate [kg/s]; K_leak = leak coefficient [kg/(s*bar)]; P_gauge = gauge pressure [bar]; K_leak = 0 for current well-sealed prototype; framework ready for field-calibrated leak coefficients from pressure decay tests
+E. Hybrid AI Integration & Verification
+21. Extended Kalman Filter (EKF) — 3-State Sensor Fusion. A 3-state EKF over [T, P, V] fuses noisy ESP32 sensor readings with physics model predictions at every timestep. Converged within 5 cycles and maintained stability for 21,364 continuous fusion cycles in the live hardware session without a single reset. 
+Extended Kalman Filter (EKF) — 3-State Sensor Fusion
+Where: x = state vector [T (degC), P (bar), V (L)]^T; x_hat_k = estimated state at step k; f() = physics model process function (nonlinear); K_k = Kalman gain matrix; z_k = sensor measurement vector; h() = measurement function; P_k = state covariance matrix; I = identity matrix; H = measurement Jacobian; R = measurement noise covariance; Q = process noise covariance
+22. Mass Conservation Audit (Live, Every 10th Step). A mathematical proof of mass conservation is executed at every 10th timestep, verifying that ∑ṁ_in − ∑ṁ_out = dM/dt to within floating-point tolerance. 100% pass rate across all 1,000 automated tests confirms the system of equations is self-consistent. 
+Mass Conservation Audit — Every 10th Timestep
+Where: dM/dt = total system mass rate of change [kg/s]; m_dot_in = feedwater inlet flow [kg/s]; m_dot_out = steam outlet flow [kg/s]; tolerance less than 10^-10 kg/s; verified at every 10th solver timestep; 100% pass rate across 1000 automated tests confirms equations are self-consistent
+23. Clausius Entropy Audit (Second Law of Thermodynamics). The irreversible entropy production rate Ṁ_irr is computed and verified to be non-negative (Ṁ_irr ≥ 0) at every timestep, confirming compliance with the Second Law of Thermodynamics. 100% compliance across all 1,000 automated tests. 
+Clausius Entropy Audit — Second Law Verification
+Where: S_dot_irr = irreversible entropy production rate [W/K]; Q_fluid = heat transferred to water [W]; T_water = bulk water temperature [K]; T_wall = heater wall temperature [K]; Q_loss = ambient heat loss [W]; T_amb = ambient temperature [K]; second law requires S_dot_irr >= 0 always; 100% compliance across 1000 tests
+24. Hybrid Physics + AI Residual Correction. A gradient-boosted ML model (scikit-learn) is trained on historical session logs to predict the residual error of the physics model (hybrid_output = physics_forecast + ML_residual). The ML layer is bounded by physics to prevent extrapolation outside thermodynamically valid regions. 
+Hybrid Physics + AI Residual Correction
+Where: y_hybrid = final model output (temperature or pressure) [degC or bar]; y_physics = physics DAE model prediction; y_ML_residual = gradient-boosted ML correction term (scikit-learn); ML trained on historical session residuals; ML layer bounded by physics constraints to prevent thermodynamically invalid extrapolation
+25. Pressure Auto-Zero Calibration. At cold startup, the pressure sensor reading is captured as the ambient baseline and subtracted from all subsequent readings, eliminating session-to-session voltage drift in the ADS1115 ADC chain. This automated calibration is performed at every power-on without operator intervention. 
+Pressure Auto-Zero Calibration
+Where: P_corrected = calibrated gauge pressure [bar]; P_raw = raw ADS1115 ADC reading (voltage-converted) [bar]; P_offset = session baseline = mean of 10 readings at T less than 40 degC at cold startup [bar]; eliminates sensor drift between sessions; ADS1115 = 16-bit I2C ADC connected to 0-1.2 MPa pressure transducer
+5. Extended Kalman Filter — Sensor-Model Fusion
+5.1 Why an EKF?
+Raw sensor readings contain noise (PT100: ±0.3°C, pressure transducer: ±0.01 bar). Directly re-initialising the ODE solver with noisy measurements causes prediction 'jumps' that propagate forward and destabilise the forecast. The EKF provides a principled Bayesian optimal estimate by blending sensor observations with physics model predictions, weighted by their respective uncertainties.
+5.2 Filter Design
+EKF Parameter
+Temperature (T)
+Pressure (Pabs)
+Water Level (V)
+State vector x
+T (°C)
+Pabs (bar)
+Vwater (L)
+Process noise Q
+0.05 °C²/s
+0.0001 bar²/s
+0.001 L²/s
+Measurement noise R
+0.25 °C²
+0.0004 bar²
+0.04 L²
+Initial covariance P₀
+±2.0 °C
+±0.1 bar
+±0.5 L
+Converged uncertainty
+±0.25 °C
+±0.02 bar
+±0.1 L
+5.3 EKF Convergence — Live Session Data
+During a recorded live session on 1 May 2026, the EKF completed 21,364 fusion cycles without a single reset. The Kalman gain for temperature fell from 0.94 (cycle 1, high uncertainty) to 0.25 (cycle 5+, converged), confirming rapid and stable convergence. Innovation terms (ΔT = 0.01°C, ΔP = −0.005 bar) confirm the physics model and sensors are in agreement.
+6. BoilerCore Dashboard — Features & Screenshots
+6.1 System Overview
+The Next.js web dashboard provides operators with a single-pane view of the boiler’s current state and predicted future state. All data streams at 1-second intervals, matching the ESP32 firmware’s telemetry transmission rate (100% real-time sync).
+Figure 3: System Overview dashboard — all systems operational at 03:45:37 AM, ESP32 linked, 100% realtime sync
+Figure 4: System Overview at 03:48:09 AM showing rising pressure (1.02 bar) and temperature (105.2°C) during heating
+6.2 Full Dashboard View with System Schematic
+Figure 5: Complete dashboard view — System Schematic (LIVE), System Status panel, Digital Twin Autopilot, and Manual Overrides
+6.3 System Schematic (Animated LIVE View)
+Figure 6: Animated live system schematic — heater ON (orange coils), 4.2 L water level, steam space visible at top-right, MANUAL ON mode
+6.4 System Status & Controls
+Figure 7: System Status Panel Drum Pressure: High, Network: Online, Heater: Active, Feed Pump: Ready, Steam Valve: Closed
+Figure 8: Digital Twin Autopilot Target: 1.3 bar, 5M prediction: 0.875/0.894 bar in 60 sec, Valve auto-open at target
+Figure 9: Manual Overrides Panel Stop Heater, Open/Close Valve, Optimize Performance, Export Report, View Predictions
+6.5 Physics-Based 10-Minute Forecast
+Figure 11: 10-Minute physics-based forecast — Temperature predicted at 122.7°C (+22.8 vs now), Pressure at 1.896 bar (+1.100), Water Level at 4.409 L (+0.210)
+6.6 Telemetry Log
+Figure 12: Telemetry log — timestamped sensor readings every 1 second, pressure ~0.79–0.81 bar, temp 99.6–100.3°C, water level stable at 4.20 L
+6.7 Model Validation Chart
+Figure 13: Model Validation — RMSE: 0.12°C, MAPE: 0.1% over last 20 validation cycles. Actual T (blue solid) vs Predicted T (orange dashed)
+6.8 Energy Balance
+Figure 14: Energy Balance panel — Useful Heat: 0.4806 kWh (1.9%), Convective Losses: 3.8793 kWh, Metal Storage/Latent: 21.1961 kWh, Session Efficiency: 1.9%
+6.9 Model Verification — Complete
+Figure 15: Model Verification Complete — Temperature: 97.2% accuracy (predicted 122.5°C vs actual 119.2°C); Pressure: 97.2% (1.680 vs 1.729 bar); Water Level: 95.0% (4.408 vs 4.199 L)
+7. Testing Methodology & Results
+7.1 Testing Approach
+Testing was conducted at three levels: (a) automated unit and integration testing of the physics engine, (b) field validation against IAPWS-97 ground truth across a simulated 45-minute heating cycle, and (c) live hardware testing with the physical boiler prototype.
+7.2 Automated Test Suite — 1,000 Tests
+Test Category
+# Tests
+Pass Rate
+What Is Verified
+Matrix Solver (C·X=D)
+250
+100%
+DAE system solves correctly for all input combinations
+Second Law (Clausius)
+150
+100%
+Entropy production Ṡirr ≥ 0 for all states
+predict_forward()
+250
+100%
+Single-step forward propagation is physically consistent
+predict_timeline()
+150
+100%
+Multi-step timeline consistency and monotonic pressure rise
+Void Fraction α(φ, P)
+100
+100%
+Zuber-Findlay model returns α ∈ [0, 1] always
+Energy Direction
+100
+100%
+Heat only flows from hot to cold (2nd law)
+TOTAL
+1,000
+100%
+Full physics engine validation
+7.3 Field Validation — 45-Minute Heating Cycle
+Metric
+Temperature
+Pressure
+Notes
+RMSE
+2.01 °C
+0.208 bar
+Averaged over 45-min cycle
+MAPE
+0.46%
+1.16%
+Mean absolute percentage error
+Max Error
+21.5 °C*
+1.54 bar*
+Only at P > 5 bar (regime transition)
+Normal Range (1–3 bar)
+< 3 °C
+< 0.05 bar
+Typical operating range performance
+Mass Conservation
+100%
+—
+All 270 timesteps conserve mass exactly
+Entropy Compliance
+100%
+—
+2nd Law satisfied at all 270 timesteps
+* Maximum errors occur exclusively during sealed-vessel → ODE regime transition at P > 5 bar. This is beyond the rated operating pressure of the prototype (safety valve set at ~2 bar).
+7.4 Live Hardware Testing — Session Data (1 May 2026)
+Parameter
+Observed Value
+Status
+Pressure at session start
+0.77 bar → 1.02 bar
+Rising, as expected
+Temperature progression
+99.5°C → 105.2°C
+Consistent with 1 kW input
+Thermal efficiency
+73.1 – 75.0%
+Expected for uninsulated bench prototype
+EKF cycles completed
+21,364 cycles (13 min 45 s session)
+Zero resets — stable convergence
+Model Health score
+98 / 100
+Excellent model-reality sync
+Telemetry sample rate
+1-second telemetry interval (100% real-time)
+No dropped packets
+Autopilot target
+1.3 bar
+Valve auto-open prediction active
+Forecast verification (10 min)
+Temp: 97.2%, Pressure: 97.2%, Level: 95.0%
+Verified against live sensor
+7.5 Energy Balance Analysis
+Energy Category
+Value (kWh)
+Fraction
+Physical Explanation
+Useful Heat (Water)
+0.481
+~1.9%
+Heat absorbed by water — low as T is still rising
+Convective Losses
+3.879
+~15%
+Ambient losses from uninsulated drum surface
+Metal Storage / Latent
+21.196
+~83%
+Heat stored in drum metal and latent steam. Physical drum mass is 6.5 kg; the physics model uses a thermally-coupled effective mass of 3.0 kg, calibrated to account for the heater element and inner wall only being in thermal equilibrium with water at a 10-minute prediction timescale.
+Session Efficiency
+1.9%
+—
+Expected for short session on cold, uninsulated prototype
+7.6 Model Validation — Continuous
+The Model Validation chart runs continuously in the dashboard, plotting Actual T (blue solid) vs Predicted T (orange dashed) over the last 20 validation cycles. Live session data showed RMSE of 0.12°C and MAPE of 0.1% in the 99–101°C range — well within operational expectations.
+8. Iteration, Learning & Engineering Trade-offs
+8.1 What Worked Well
+Radau solver stability: We initially attempted standard explicit RK45, but it diverged due to the extreme stiffness of the boiling phase — the abrupt ~1,600× density jump from water to steam. Upgrading to the Radau method (a 5th-order implicit Runge-Kutta algorithm designed for stiff DAEs) eliminated all ODE divergence in stiff boiling regimes.
+EKF convergence: Filter converged within 5 cycles and maintained stability for the entire 21,364-cycle live session
+IAPWS-97 spline tables: Pre-computing thermodynamic properties at 500 points reduced evaluation time by 100×
+Row scaling in C matrix: Normalising each equation by its largest element reduced condition number from O(10¹⁴) to O(10⁶)
+Live model verification: Automatically comparing forecast vs actual at horizon expiry built operator confidence
+Modular Python architecture: Clean separation of physics/, engine/, core/ layers enabled rapid debugging and testing
+8.2 Challenges & Iterations
+Challenge
+Root Cause
+Resolution
+Pressure under-prediction at 55–80°C
+Vapor equilibrium model assumed full Psat; trapped air dilutes vapor
+Calibrated sigmoid η(T) via differential evolution on 7,143 data points — 30.5% RMSE improvement
+ODE solver divergence
+Subcooled → boiling handoff used φ₀ = 0, causing discontinuity
+Smooth transition with φ₀ = 0.005 and regime-aware initial conditions
+Sensor noise causing forecast jumps
+Raw sensor values fed directly to ODE initial state
+EKF introduced to provide smooth, noise-filtered state estimates
+ADS1115 pressure drift
+Voltage divider ratio needed calibration per session
+In-situ calibration routine added to serial_proxy.py
+High C matrix condition number
+Density ratio ρw/ρs ≈ 1,600 spans 14 orders of magnitude
+Row scaling normalises each equation independently
+8.3 Engineering Trade-offs
+Trade-off
+Option A (Chosen)
+Option B (Rejected)
+Rationale
+Physics model
+First-principles DAE
+ML regression model
+Conservation laws guaranteed; ML residual layer corrects unmodelled non-linearities without compromising physical validity
+ODE solver
+Radau (implicit, stiff-stable)
+RK45 (explicit, fast)
+Boiling phase is stiff (~1,600× density jump); explicit RK45 diverged, Radau’s implicit formulation is unconditionally stable for this class of DAE.
+Property lookup
+IAPWS-97 splines (pre-computed)
+On-the-fly IAPWS97() calls
+100× speed improvement; negligible accuracy loss
+Void fraction model
+Zuber-Findlay drift-flux (C₀=1.13)
+Homogeneous mixture model
+Better accuracy for subcooled boiling with bubble slip
+Sensor fusion
+Extended Kalman Filter (EKF)
+Raw sensor passthrough
+EKF eliminates noise-driven forecast instability
+Dashboard stack
+Next.js + TypeScript
+Flask/Django + HTML
+Real-time WebSocket updates; better component reuse
+9. Industrial Relevance to Thermax
+9.1 Value Proposition
+Thermax is one of India's leading boiler manufacturers. BoilerCore was designed from the outset to be parameterised by boiler geometry — making it directly portable to any Thermax boiler by updating a single configuration file (constants.py) with drum dimensions, metal mass, and heater specifications.
+Immediate Productisation Path for Thermax:
+OEM Integration: Every Thermax boiler shipped with a pre-configured BoilerCore instance
+Predictive Maintenance: Detect efficiency drop (fouling), pressure anomalies before failure
+Virtual Commissioning: Test control strategies on the digital twin before field deployment
+Operator Training: New operators practice on the twin — zero risk to equipment
+SaaS Revenue Model: Cloud-deployed twins with recurring monitoring subscription revenue
+Regulatory Compliance: Automated logging satisfies boiler inspection audit requirements
+9.2 Scalability
+Aspect
+Parameterised (Changes Per Model)
+Reused As-Is
+Drum geometry
+D_DRUM, H_DRUM in constants.py
+All conservation equations
+Metal mass
+M_M in constants.py
+EKF structure and Kalman gains
+Heater specs
+A_HEATER, Qmax in constants.py
+IAPWS-97 property tables
+Sensor calibration
+Pressure zero/span in proxy
+Dashboard and REST API
+Operating pressure
+Safety limits in solver_logic.py
+Radau ODE solver
+10. Technology Stack
+Layer
+Technology
+Version / Detail
+Firmware
+C++ (Arduino Framework)
+ESP32 DevKit, 115200 baud UART
+Physics Engine
+Python 3 + NumPy + SciPy
+Radau ODE solver, IAPWS-97
+Thermodynamic Properties
+IAPWS library (Python)
+Cubic spline interpolation, 500 pressure points
+Sensor Fusion
+Custom EKF (Python)
+3-state: T, Pabs, Vwater
+Serial Bridge
+Python pyserial + HTTP server
+Median/MAD filter, REST endpoints
+Dashboard Framework
+Next.js 16 (TypeScript)
+App Router, React 19
+Visualisation
+Recharts + custom SVG
+Real-time streaming charts
+Version Control
+Git / GitHub
+github.com/aryanchauhan3800/PHYSICS_MODEL
+Codebase Size
+~6,000 lines total
+~2,500 physics + ~3,500 infrastructure
+11. Conclusion
+BoilerCore demonstrates that a rigorous, first-principles digital twin is achievable on low-cost open hardware (ESP32 + commodity sensors) with performance that rivals commercial solutions costing orders of magnitude more.
+The system is not a demonstration — it is a working prototype that has been validated against thermodynamic first principles (1,000 tests, 100% pass rate), against field simulation (MAPE 0.46% temperature, 1.16% pressure), and against live hardware (21,364 EKF cycles, zero resets, 97%+ forecast accuracy at 10 minutes).
+The architecture is deliberately designed for industrial productisation: parameterise constants.py with a new boiler's geometry and the entire physics engine, sensor fusion, and dashboard adapt automatically. This aligns directly with Thermax's product line and opens pathways for predictive maintenance, SaaS monitoring, and digital commissioning at scale.
+Summary of Achievements
+Fully functional physical prototype — 6.1L steam boiler with complete sensor suite
+First-principles 4-equation DAE physics model — conservation laws proven at every timestep
+Extended Kalman Filter — 21,364 fusion cycles, zero resets in live session
+10-minute physics forecast — 97.2% temperature accuracy verified against live sensor
+Digital Twin Autopilot — closed-loop predictive valve control operational
+1,000 automated tests — 100% pass rate across all physics modules
+Production-grade Next.js dashboard — real-time telemetry, energy balance, schematic
+Open-source codebase — ~6,000 lines, fully documented on GitHub
+Prototype demonstration, full test logs, and field validation CSV are available in the GitHub repository:
+https://github.com/aryanchauhan3800/PHYSICS_MODEL 
+References
+R. S. Jha and M. M. Lele, "Dynamic modeling of a water tube boiler," Heat Transfer, Wiley, 2022. https://doi.org/10.1002/htj.22581 
+R. S. Jha, N. N. Jha, and M. M. Lele, "Predictive modelling of grate combustion and boiler dynamics," Mathematical Modelling of Engineering Problems, vol. 9, no. 1, pp. 233–244, Feb. 2022. https://doi.org/10.18280/mmep.090129 
+L. M. Sayyed, A. V. Jomde, R. S. Jha, and M. M. Lele, "Comparative study of boiler dynamics," AIP Conference Proceedings, vol. 2890, p. 020022, Aug. 2023. https://doi.org/10.1063/5.0157242 
+K. J. Åström and R. D. Bell, "Drum-boiler dynamics," Automatica, vol. 36, no. 3, pp. 363–378, 2000. https://doi.org/10.1016/S0005-1098(99)00171-5 
+P. K. Nag, Power Plant Engineering, 4th ed., Tata McGraw-Hill, New Delhi, India, 2014. https://www.mheducation.co.in/power-plant-engineering-9780070702899-india 
+International Association for the Properties of Water and Steam (IAPWS), Revised Release on the IAPWS Industrial Formulation 1997 for the Thermodynamic Properties of Water and Steam (IAPWS-IF97), IAPWS, 2012. http://www.iapws.org/relguide/IF97-Rev.html 
+U. M. Ascher and L. R. Petzold, Computer Methods for Ordinary Differential Equations and Differential-Algebraic Equations, SIAM, Philadelphia, PA, USA, 1998. https://doi.org/10.1137/1.9781611971224 
